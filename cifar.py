@@ -378,9 +378,7 @@ def change_prob_to_cate(final_pred):
     return cate_pred
 
 
-#============================================== function ==============================================
-
-
+#============================================== main ==============================================
 
 os.chdir('/home/linsam/kaggle/cifar_10')
 train_labels = pd.read_csv('trainLabels.csv')
@@ -488,30 +486,4 @@ sample = pd.read_csv('sampleSubmission.csv')
 #len(cate_pred[:,1])
 sample.iloc[:,1] = cate_pred
 sample.to_csv('pred.csv',index=False)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
