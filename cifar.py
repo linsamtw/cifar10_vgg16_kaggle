@@ -1,21 +1,6 @@
 
-import numpy as np
-np.random.seed(100)
-import os, cv2, random
-import pandas as pd
-%matplotlib inline 
-import matplotlib.pyplot as plt
-import keras.utils.np_utils as kutils
-import re
-from keras.models import Sequential
-from keras.layers import Input, Dropout, Flatten, Convolution2D, MaxPooling2D, ZeroPadding2D, Dense, Activation, Conv2DTranspose
-from keras.layers import Conv2D
-import keras
-import datetime
-import math
 
-
-#============================================== function ==============================================
+#===============================function===============================
 
 def input_image(file_path,labels):
     # file_path = train_image_path[0]
@@ -26,7 +11,7 @@ def input_image(file_path,labels):
     label = re.split('/',file_path)[1]
     label = int( label.replace('.png','') )
     label = labels.iloc[label-1,1]
-    #labels.iloc[23179-1,:]
+    labels.iloc[23179-1,:]
 
     return img,label    
 
@@ -74,7 +59,7 @@ def input_train_data(train_images ,train_labels ):
         
         file_path = train_images[i]
         img,label_class  = input_image(file_path,train_labels)
-        #img = img.astype('float32')/255.0
+        img = img.astype('float32')/255.0
         #img = (img.astype('float32') - [125.3, 123.0, 113.9]) / [63.0, 62.1, 66.7]
         label_int = label_dick[label_class]
         train[i] = img
@@ -94,16 +79,20 @@ def input_test_data(test_image_path):
     images = []
     count = len(test_image_path)
     test_image = np.ndarray((count, 32, 32,3), dtype=np.float32)
+    index = []
     for i in range(len(test_image_path)):
         
         file_path = test_image_path[i]
         img = cv2.imread(file_path, cv2.IMREAD_COLOR)
         #if( str( type(img) ) == "<class 'NoneType'>" )
-        #img = img.astype('float32')#/255.0
+        img = img.astype('float32')/255.0
         test_image[i] = img
+        file_path = file_path.replace('.png','')
+        file_path = file_path.replace('test/','')
+        index.append(int(file_path))
         if i%250 == 0: print('Processed {} of {}'.format(i, count))
 
-    return test_image
+    return test_image,index
    
 def show_train_history(train_history):#(train = 'acc', validation = 'val_acc'):
     plt.figure(figsize = (10,10)) # change figure size
@@ -239,19 +228,19 @@ def build_confusion_matrix(sub_train_y,train_pred):
     table = pd.crosstab(pred_int,labels_int_matrix,
                         rownames = ['label'],colnames = ['predict'])
     
-    #print(table)
+    print(table)
     amount = 0
     for i in range(len(table)):
         amount = amount + table.iloc[i,i]
     correct_per = amount/len(pred_int)
     #print('\n correct =',correct_per)
-    return correct_per
+    return table,correct_per
   
 def compare_corr_per(sub_train_x,sub_train_y):
 
     train_pred = model.predict(sub_train_x,verbose=1)
     
-    train_correct_per = build_confusion_matrix(sub_train_y,train_pred)
+    table,train_correct_per = build_confusion_matrix(sub_train_y,train_pred)
     
     #test_pred = model.predict(sub_test_x,verbose=1)
     
@@ -260,7 +249,7 @@ def compare_corr_per(sub_train_x,sub_train_y):
     print('\ncorrect_per = ' + str( train_correct_per ) )
     #print('\ntest_correct_per = '  + str( test_correct_per ) )
 
-    return train_correct_per
+    return table,train_correct_per
 
 
 def build_my_cnn_three_layer():
@@ -378,7 +367,23 @@ def change_prob_to_cate(final_pred):
     return cate_pred
 
 
-#============================================== main ==============================================
+#===============================main===============================
+
+
+import numpy as np
+np.random.seed(100)
+import os, cv2, random
+import pandas as pd
+%matplotlib inline 
+import matplotlib.pyplot as plt
+import keras.utils.np_utils as kutils
+import re
+from keras.models import Sequential
+from keras.layers import Input, Dropout, Flatten, Convolution2D, MaxPooling2D, ZeroPadding2D, Dense, Activation, Conv2DTranspose
+from keras.layers import Conv2D
+import keras
+import datetime
+import math
 
 os.chdir('/home/linsam/kaggle/cifar_10')
 train_labels = pd.read_csv('trainLabels.csv')
@@ -395,21 +400,24 @@ train_image,train_labels_int,train_labels_class = input_train_data(train_image_p
 # plot image
 #plot_images_labels(train_image,train_labels_class,20)
 #----------------------------------------------------------------------
+# cross validation
 print( len(train_image) )
-n = int( len(train_image)*0.8 )
+n = int( len(train_image)*0.9 )
 sub_train_x = train_image[:n]
 sub_train_y = train_labels_int[:n]
 
 sub_test_x = train_image[n:]
 sub_test_y = train_labels_int[n:]
 
+
+#----------------------------------------------------------------------
 #====================== step 6 : build vgg16 model =============================
 from keras.applications.vgg16 import VGG16
 from keras.applications.vgg19 import VGG19
 from keras.models import Model
 from keras.optimizers import SGD
 
-sgd = SGD(lr=1e-4, momentum=0.9, nesterov=True)
+sgd = SGD(lr=1e-3, momentum=0.9, nesterov=True)
 #adam = keras.optimizers.Adam(lr=0.001, 
 #                             beta_1=0.9, 
 #                             beta_2=0.999, 
@@ -455,7 +463,7 @@ model.compile(optimizer = sgd, #sgd
 train_history = model.fit(sub_train_x,# train x ( feature )
                           sub_train_y,# train y ( label or target )
                           validation_split = 0.2,# catch 20% data to validation 
-                          epochs = 5,# run 10 times
+                          epochs = 10,# run 10 times
                           batch_size = 128,# 128 data/times
                           verbose = 1,    # print process  
                           shuffle = False)
@@ -463,27 +471,68 @@ model.save_weights('vgg16_cifar_10_2.h5')
 #====================== step 7 : evaluate model =============================
 show_train_history(train_history)
 
-tem = compare_corr_per(sub_train_x,sub_train_y)
+train_table,tem = compare_corr_per(sub_train_x,sub_train_y)
 
-tem
-
-
-#----------------------------------------------------------------------
-#----------------------------------------------------------------------
+test_table,tem2 = compare_corr_per(sub_test_x,sub_test_y)
 
 
-# 10 : 0.5085
-#test = build_test_data(ROWS,COLS)
-#test_image = input_test_data(test_image_path)
-test_image = input_test_data(test_image_path)
+#--------------------------------------------------------------------------
+# input test data
+test_image,index = input_test_data(test_image_path)
 
 final_pred = model.predict(test_image,verbose=1)
 
 cate_pred = change_prob_to_cate(final_pred)
 
-sample = pd.read_csv('sampleSubmission.csv')
-#pred = {'label':pred}
-#len(cate_pred[:,1])
-sample.iloc[:,1] = cate_pred
-sample.to_csv('pred.csv',index=False)
+output = {'id':index,
+          'label':cate_pred}
+output = pd.DataFrame(output)
+output = output.sort_values('id')
+
+output.to_csv('output.csv',index=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
