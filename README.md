@@ -1,6 +1,7 @@
 # CIFAR-10 ( 影像分類問題 10 類 )
 **********************************************
-我使用 keras - vgg16，經過多次調整，最後上傳 Kaggle 準確率為 0.8744，DATA可以從 https://www.kaggle.com/c/cifar-10/data 下載
+我使用 keras - vgg16，經過多次調整，最後上傳 Kaggle 準確率為 0.8744，DATA可以從 https://www.kaggle.com/c/cifar-10/data 下載，
+結果不算好，如果有更好的方法，麻煩提供給我，謝謝
 
 MY GPU is GTX-1070
 **********************************************
