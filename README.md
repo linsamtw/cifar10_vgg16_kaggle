@@ -1,6 +1,6 @@
 # CIFAR-10 ( 影像分類問題 10 類 )
 **********************************************
-我使用 keras - vgg16 ，最後上傳 Kaggle 準確率為 0.8744，DATA可以從 https://www.kaggle.com/c/cifar-10/data 下載
+我使用 keras - vgg16，經過多次調整，最後上傳 Kaggle 準確率為 0.8744，DATA可以從 https://www.kaggle.com/c/cifar-10/data 下載
 
 MY GPU is GTX-1070
 **********************************************
@@ -107,7 +107,7 @@ model.compile(optimizer = sgd, #sgd
               metrics = ['accuracy'])
 ```
 
-## 設置 train_history， 可以看出訓練的過程 <br>
+## 設置 train_history，利用 show_train_history 可以畫出訓練的過程 <br>
 ```sh
 train_history = model.fit(sub_train_x,# train x ( feature )
                           sub_train_y,# train y ( label or target )
@@ -116,7 +116,178 @@ train_history = model.fit(sub_train_x,# train x ( feature )
                           batch_size = 128,# 128 data/times
                           verbose = 1,    # print process  
                           shuffle = False)
+show_train_history(train_history)
 ```
+
+## 計算 train and test 的 confusion_matrix 正確率，model.save_weights 可以儲存訓練好的 weight <br>
+```sh
+train_table,tem11 = compare_corr_per(sub_train_x,sub_train_y)
+# 如果沒有進行 cross_validation, 以下將不用執行
+#test_table,tem21 = compare_corr_per(sub_test_x,sub_test_y)
+model.save_weights('vgg16_temp_alldata.h5')
+```
+
+## 第二次訓練，與前面不同的是，lr : 1e-5 -> 1e-4，momentum : 0.2 -> 0.5，提高效率 <br>
+```sh
+sgd = SGD(lr=1e-4, momentum=0.5, nesterov=True)
+model.compile(optimizer = sgd, 
+              loss='categorical_crossentropy',
+              metrics = ['accuracy'])
+
+train_history = model.fit(sub_train_x,# train x ( feature )
+                          sub_train_y,# train y ( label or target )
+                          validation_split = 0.2,# catch 20% data to validation 
+                          epochs = 10,# run 10 times
+                          batch_size = 128,# 128 data/times
+                          verbose = 1,    # print process  
+                          shuffle = False)
+
+train_table,tem = compare_corr_per(sub_train_x,sub_train_y)# 計算正確率
+test_table,tem2 = compare_corr_per(sub_test_x,sub_test_y)# 計算正確率
+```
+
+## 第三次訓練，再次提高效率，必須先進行小 lr 訓練，如果直接 lr = 1e-3，會訓練很爛 <br>
+```sh
+sgd = SGD(lr=1e-3, momentum=0.8, nesterov=True)
+model.compile(optimizer = sgd, #sgd
+              loss='categorical_crossentropy',
+              metrics = ['accuracy'])
+
+train_history = model.fit(sub_train_x,# train x ( feature )
+                          sub_train_y,# train y ( label or target )
+                          #validation_split = 0.1,# catch 20% data to validation 
+                          epochs = 10,# run 50 times
+                          batch_size = 128,# 128 data/times
+                          verbose = 1,    # print process  
+                          shuffle = False)                          
+
+train_table,tem = compare_corr_per(sub_train_x,sub_train_y)# 計算正確率
+test_table,tem2 = compare_corr_per(sub_test_x,sub_test_y)# 計算正確率
+```
+
+## 以上並沒有更改 vgg 結構，下一步，我們將在 VGG16 最後端，加入以下結構
+
+## 原始 VGG 結構，使用 model_vgg16_conv.summary() 函數，可以很清楚看出 VGG16 結構 <br>
+```sh
+model_vgg16_conv = VGG16(weights='imagenet', # 一樣使用 keras 提供的 weight
+                         include_top=False)
+model_vgg16_conv.summary()
+#_______________________________________________________________
+#Layer (type)                 Output Shape              Param #   
+#=================================================================
+#input_20 (InputLayer)        (None, None, None, 3)     0         
+#_______________________________________________________________
+#block1_conv1 (Conv2D)        (None, None, None, 64)    1792      
+#_______________________________________________________________
+#block1_conv2 (Conv2D)        (None, None, None, 64)    36928     
+#_______________________________________________________________
+#block1_pool (MaxPooling2D)   (None, None, None, 64)    0         
+#_______________________________________________________________
+#block2_conv1 (Conv2D)        (None, None, None, 128)   73856     
+#_______________________________________________________________
+#block2_conv2 (Conv2D)        (None, None, None, 128)   147584    
+#_______________________________________________________________
+#block2_pool (MaxPooling2D)   (None, None, None, 128)   0         
+#_______________________________________________________________
+#block3_conv1 (Conv2D)        (None, None, None, 256)   295168    
+#_______________________________________________________________
+#block3_conv2 (Conv2D)        (None, None, None, 256)   590080    
+#_______________________________________________________________
+#block3_conv3 (Conv2D)        (None, None, None, 256)   590080    
+#_______________________________________________________________
+#block3_pool (MaxPooling2D)   (None, None, None, 256)   0         
+#_______________________________________________________________
+#block4_conv1 (Conv2D)        (None, None, None, 512)   1180160   
+#_______________________________________________________________
+#block4_conv2 (Conv2D)        (None, None, None, 512)   2359808   
+#_______________________________________________________________
+#block4_conv3 (Conv2D)        (None, None, None, 512)   2359808   
+#_______________________________________________________________
+#block4_pool (MaxPooling2D)   (None, None, None, 512)   0         
+#_______________________________________________________________
+#block5_conv1 (Conv2D)        (None, None, None, 512)   2359808   
+#_______________________________________________________________
+#block5_conv2 (Conv2D)        (None, None, None, 512)   2359808   
+#_______________________________________________________________
+#block5_conv3 (Conv2D)        (None, None, None, 512)   2359808   
+#_______________________________________________________________
+#block5_pool (MaxPooling2D)   (None, None, None, 512)   0         
+#=================================================================
+#Total params: 14,714,688
+#Trainable params: 14,714,688
+#Non-trainable params: 0
+```
+
+## 以下更改 VGG16 結構，將提高準確率<br>
+```sh
+input = Input(shape=(32,
+                     32,3),
+                     name = 'image_input')
+#Use the generated model 
+output_vgg16_conv = model_vgg16_conv(input)
+
+#Add the fully-connected layers 
+x = Flatten()(output_vgg16_conv)
+x = Dense(256,activation = 'relu')(x)
+x = Dropout(0.5)(x)
+x = Dense(10, activation='sigmoid')(x)
+#Create your own model 
+model = Model(input=input, output=x)
+model.summary()# look my CNN architecture
+```
+## 更改結構後為<br>
+```sh
+#_______________________________________________________________
+#
+#_______________________________________________________________
+#Layer (type)                 Output Shape              Param #   
+#=================================================================
+#image_input (InputLayer)     (None, 32, 32, 3)         0         
+#_______________________________________________________________
+#   *** 這裡是原始 vgg16 結構, 可以由 Param 數量 14714688 得知
+#vgg16 (Model)                multiple                  14714688
+#_______________________________________________________________
+#flatten_20 (Flatten)         (None, 512)               0         
+#_______________________________________________________________
+#dense_37 (Dense)             (None, 256)               131328    
+#_______________________________________________________________
+#dropout_18 (Dropout)         (None, 256)               0         
+#_______________________________________________________________
+#dense_38 (Dense)             (None, 10)                2570      
+#=================================================================
+#Total params: 14,848,586
+#Trainable params: 14,848,586
+#Non-trainable params: 0
+#_______________________________________________________________
+```
+
+## 一樣先進行小 lr training，比較特別的是，這裡 loss 使用 binary_crossentropy <br>
+```sh
+sgd = SGD(lr=1e-5, momentum=0.9)
+model.compile(optimizer = sgd, #sgd
+              loss='binary_crossentropy',
+              metrics = ['accuracy'])
+
+# use train_history, that can get model history
+# 如果沒有GPU, 可以使用我 train 好的 weight
+# model.load_weights('vgg16_temp_alldata.h5') 
+train_history = model.fit(sub_train_x,# train x ( feature )
+                          sub_train_y,# train y ( label or target )
+                          #validation_split = 0.2,# catch 20% data to validation 
+						  # 不進行 validation_split, 由於 data 多, 可以 train 的更好
+						  # 使用 validation_split 可以看出收斂性
+                          epochs = 10,# run 20 times
+                          batch_size = 128,# 128 data/times
+                          verbose = 1,    # print process  
+                          shuffle = False)
+                          
+#show_train_history(train_history)# plot training hisrtory
+train_table,tem11 = compare_corr_per(sub_train_x,sub_train_y)
+# 如果沒有進行 cross_validation, 以下將不用執行
+#test_table,tem21 = compare_corr_per(sub_test_x,sub_test_y)
+model.save_weights('vgg16_temp_alldata.h5')
+```
+如果沒有 GPU ，可以使用我 train 好的 weight [vgg16_temp_alldata](https://drive.google.com/file/d/0B4VP7a8ewj_2NG9NWkFFMmRKY2M/view)
 
 ## 分割完後的圖片<br>
 ```sh
@@ -130,13 +301,17 @@ img1 = my_plt_fun(x_split_start,x_split_end,0)
 plt.imshow(img1)
 ```
 
-
 ## 分割完後的圖片<br>
 ```sh
 img1 = my_plt_fun(x_split_start,x_split_end,0)
 plt.imshow(img1)
 ```
 
+## 分割完後的圖片<br>
+```sh
+img1 = my_plt_fun(x_split_start,x_split_end,0)
+plt.imshow(img1)
+```
 ## 儲存<br>
 ```sh
 for i in range(len(x_split_start)):
