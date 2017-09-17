@@ -11,7 +11,7 @@ MY GPU is GTX-1070
 
 馬的圖片，大小為 32x32x3，我們將訓練 vgg 16 model ，學會辨識
 
-## packages，其中安裝 CV2 可能會遇到問題，不少人遇到相同問題，可以 google 找找看解決方法<br>
+## packages，其中安裝 CV2 可能會遇到問題，可以 google 找找看解決方法<br>
 ```sh
 import numpy as np
 np.random.seed(100)
