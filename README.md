@@ -9,7 +9,7 @@ MY GPU is GTX-1070
 首先，下圖是其中一張的 image <br><br>
  ![horse](https://github.com/f496328mm/cifar10_vgg16_kaggle/blob/master/horse1.png)
 
-馬的圖片，大小為 32*32*3，我們將訓練 vgg 16 model ，學會辨識
+馬的圖片，大小為 32x32x3，我們將訓練 vgg 16 model ，學會辨識
 
 ## packages，其中安裝 CV2 可能會遇到問題，不少人遇到相同問題，可以 google 找找看解決方法<br>
 ```sh
@@ -80,7 +80,7 @@ model_vgg16_conv = VGG16(weights='imagenet',
 #                         include_top=False)                         
 ```
 
-## 使用 vgg16 ， 需要設定 image 的 shape，該 image 的 shape is 32*32*3 <br>
+## 使用 vgg16 ， 需要設定 image 的 shape，該 image 的 shape is 32x32x3 <br>
 ```sh
 # set input shape, 32*32*3
 # 使用 vgg16 or 其他人的 model, 需要給定自己 image 的 shape
