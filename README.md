@@ -261,7 +261,7 @@ model.summary()# look my CNN architecture
 #_______________________________________________________________
 ```
 
-## 一樣先進行小 lr training，比較特別的是，這裡 loss 使用 binary_crossentropy <br>
+## 一樣先進行小 lr training，比較特別的是，這裡 loss 使用 binary_crossentropy，這裡提供我 train 好的 weight [vgg16_temp_alldata.h5](https://drive.google.com/file/d/0B4VP7a8ewj_2NG9NWkFFMmRKY2M/view) <br>
 ```sh
 sgd = SGD(lr=1e-5, momentum=0.9)
 model.compile(optimizer = sgd, #sgd
@@ -287,35 +287,49 @@ train_table,tem11 = compare_corr_per(sub_train_x,sub_train_y)
 #test_table,tem21 = compare_corr_per(sub_test_x,sub_test_y)
 model.save_weights('vgg16_temp_alldata.h5')
 ```
-如果沒有 GPU ，可以使用我 train 好的 weight [vgg16_temp_alldata](https://drive.google.com/file/d/0B4VP7a8ewj_2NG9NWkFFMmRKY2M/view)
 
-## 分割完後的圖片<br>
+## 再次訓練，150次，這裡提供我 train 好的 weight [vgg16_temp3_alldata.h5](https://drive.google.com/file/d/0B4VP7a8ewj_2aDAxcU1ZM0ZmQ2c/view)，可以藉由 model.load_weights 讀取<br>
 ```sh
-img1 = my_plt_fun(x_split_start,x_split_end,0)
-plt.imshow(img1)
+
+model.load_weights('vgg16_temp_alldata.h5')
+# 這是並沒有 1e-5 -> 1e-4 -> 1e-3, 直接 1e-5 -> 1e-3, loss 也改為 categorical_crossentropy
+sgd = SGD(lr=1e-3, momentum=0.9)
+model.compile(optimizer = sgd, #sgd
+              loss='categorical_crossentropy',
+              metrics = ['accuracy'])
+# 如果沒有GPU, 可以使用我 train 好的 weight
+# model.load_weights('vgg16_temp3_alldata.h5')
+train_history = model.fit(sub_train_x,# train x ( feature )
+                          sub_train_y,# train y ( label or target )
+                          #validation_split = 0.2,# catch 20% data to validation 
+						  # 不進行 validation_split, 由於 data 多, 可以 train 的更好
+						  # 使用 validation_split 可以看出收斂性
+                          epochs = 150,# run  times  150 
+                          batch_size = 128,# 128 data/times
+                          verbose = 1,    # print process  
+                          shuffle = False)
+                          
+#show_train_history(train_history)# plot training hisrtory
+train_table,tem13 = compare_corr_per(sub_train_x,sub_train_y)
+#test_table,tem13 = compare_corr_per(sub_test_x,sub_test_y)
+model.save_weights('vgg16_temp3_alldata.h5')#28
 ```
 
-## 分割完後的圖片<br>
+## 最後預測<br>
 ```sh
-img1 = my_plt_fun(x_split_start,x_split_end,0)
-plt.imshow(img1)
+final_pred = model.predict(test_image,verbose=1)
 ```
 
-## 分割完後的圖片<br>
+## 預測結果為機率，轉成 cate，將 output 提交到 kaggle 上, 可以獲得 0.8744 準確率 <br>
 ```sh
-img1 = my_plt_fun(x_split_start,x_split_end,0)
-plt.imshow(img1)
-```
+cate_pred = change_prob_to_cate(final_pred)
 
-## 分割完後的圖片<br>
-```sh
-img1 = my_plt_fun(x_split_start,x_split_end,0)
-plt.imshow(img1)
-```
-## 儲存<br>
-```sh
-for i in range(len(x_split_start)):
-    my_plt_fun(x_split_start,x_split_end,i)
-```
+output = {'id':index,
+          'label':cate_pred}
+output = pd.DataFrame(output)
+output = output.sort_values('id')
 
+output.to_csv('output.csv',index=False)
+# 
+```
 
