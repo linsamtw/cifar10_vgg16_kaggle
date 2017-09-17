@@ -262,7 +262,7 @@ model.summary()# look my CNN architecture
 #_______________________________________________________________
 ```
 
-## 一樣先進行小 lr training，比較特別的是，這裡 loss 使用 binary_crossentropy，這裡提供我 train 好的 weight [vgg16_temp_alldata.h5](https://drive.google.com/file/d/0B4VP7a8ewj_2NG9NWkFFMmRKY2M/view) <br>
+## 一樣先進行小 lr training，比較特別的是，這裡 loss 使用 binary_crossentropy，以下提供我 train 好的 weight [vgg16_temp_alldata.h5](https://drive.google.com/file/d/0B4VP7a8ewj_2NG9NWkFFMmRKY2M/view) <br>
 ```sh
 sgd = SGD(lr=1e-5, momentum=0.9)
 model.compile(optimizer = sgd, #sgd
@@ -289,7 +289,7 @@ train_table,tem11 = compare_corr_per(sub_train_x,sub_train_y)
 model.save_weights('vgg16_temp_alldata.h5')
 ```
 
-## 再次訓練，150次，這裡提供我 train 好的 weight [vgg16_temp3_alldata.h5](https://drive.google.com/file/d/0B4VP7a8ewj_2aDAxcU1ZM0ZmQ2c/view)，可以藉由 model.load_weights 讀取<br>
+## 再次訓練，150次，以下提供我 train 好的 weight [vgg16_temp3_alldata.h5](https://drive.google.com/file/d/0B4VP7a8ewj_2aDAxcU1ZM0ZmQ2c/view)，可以藉由 model.load_weights 讀取<br>
 ```sh
 
 model.load_weights('vgg16_temp_alldata.h5')
