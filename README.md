@@ -331,6 +331,56 @@ output = pd.DataFrame(output)
 output = output.sort_values('id')
 
 output.to_csv('output.csv',index=False)
-# 
 ```
+
+## 以下介紹簡單的 CNN 架構，程式碼後面有註解，就不再贅述 <br>
+
+```sh
+model = Sequential()
+#------------------------------------------------
+# build convolution 1
+model.add(Conv2D(
+	    filters = 32,# random build 32 filter(濾波器) weight
+	    kernel_size = (3,3),# 濾波器 is 3*3 size
+	    input_shape = (32,32,3),# image.shape is 32*32*3
+	    activation = 'relu',# 激活 function is relu
+	    padding='same'# image size is same
+	    ))
+
+model.add(Dropout(rate = 0.25))# drop 25% net, avoid overfitting
+
+# build pool, (2,2) is dimension reduction, 
+# (2,2) --dimension reductioin ->1
+# ex: shape 32*32 -> 16*16, but filter doesn't change, it still is 32
+model.add(MaxPooling2D(pool_size = (2,2)))
+#------------------------------------------------
+# build convolution 2
+model.add(Conv2D(
+				# filters 要*2, 32 -> 64, 如果沒*2, 那 1->1 沒有效果
+	    filters = 64,# random build 64 filter(濾波器) weight
+	    kernel_size = (3,3),# 濾波器 is 3*3
+	    # this doesn't need input_shape, it is auto catch conv 1
+	    activation = 'relu',# 激活 function is relu
+	    padding='same'# image size is same
+	    ))
+model.add(Dropout(rate = 0.25))# drop 25% net, avoid overfitting
+# build pool 2
+model.add(MaxPooling2D(pool_size = (2,2)))
+#------------------------------------------------
+# build flatten(平坦層), that is one dimension
+# 64 (filters) * 8 * 8 = 4096, 8 is 32(shape) -> pool -> 16 -> pool ->8
+model.add(Flatten())
+model.add(Dropout(rate = 0.25))# drop 25% net, avoid overfitting
+# build Dense( 隱藏層 )
+model.add(Dense(1024,activation = 'relu'))
+model.add(Dropout(rate = 0.25))# drop 25% net, avoid overfitting
+
+# build output, 10 is ten categories, softmax is output probability
+model.add(Dense(10,activation = 'softmax'))
+```
+
+
+
+
+
 
